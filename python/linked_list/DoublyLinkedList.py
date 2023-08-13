@@ -145,7 +145,7 @@ class SinglyLinkedList:
             raise IndexError("Index out of range")
 
     def __str__(self) -> str:
-        return str(list(iter(self)))
+        return "Head <-> " + " <-> ".join(map(str, self)) + " <-> Tail"
 
     def __iter__(self) -> Any:
         current = self.first
@@ -175,7 +175,7 @@ def main():
     )
     parser.add_argument(
         "operation",
-        choices=["swap", "insert", "remove", "replace", "get"],
+        choices=["swap", "insert", "remove", "replace", "get", "print"],
         help="Operation to perform on the linked list",
     )
     parser.add_argument(
@@ -220,6 +220,8 @@ def main():
                     print(linked_list.get_last())
                 case "mid":
                     print(linked_list.get_mid(int(args.args[1])))
+        case "print":
+            print(linked_list)
 
     linked_list_to_csv(linked_list)
 
