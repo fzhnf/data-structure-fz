@@ -106,22 +106,21 @@ class SinglyLinkedList:
             else:
                 raise IndexError("Index out of range")
         if current:
-            node1 = current
-            value1 = node1.value
+            value1 = current.value
         else:
             raise IndexError("Index out of range")
-        for _ in range(index2 - index1 - 1):
+        current = self.first
+        for _ in range(index2):
             if current:
                 current = current.next
             else:
                 raise IndexError("Index out of range")
         if current:
-            node2 = current.next
-            value2 = node2.value
+            value2 = current.value
         else:
             raise IndexError("Index out of range")
-        node1.value = value2
-        node2.value = value1
+        self.replace_mid(value1, index2)
+        self.replace_mid(value2, index1)
 
     def get_first(self) -> Any:
         if self.first:
@@ -169,8 +168,8 @@ def csv_to_linked_list(filename: str) -> SinglyLinkedList:
     return linked_list
 
 
-def linked_list_to_csv(linked_list: SinglyLinkedList) -> None:
-    with open("linked_list.csv", "w", newline="") as csvfile:
+def linked_list_to_csv(linked_list: SinglyLinkedList, filename: str) -> None:
+    with open(filename, "w", newline="") as csvfile:
         writer = csv.writer(csvfile)
         writer.writerow(iter(linked_list))
 
@@ -229,7 +228,7 @@ def main():
         case "print":
             print(linked_list)
 
-    linked_list_to_csv(linked_list)
+    linked_list_to_csv(linked_list, "linked_list.csv")
 
 
 if __name__ == "__main__":
