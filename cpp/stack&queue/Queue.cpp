@@ -1,99 +1,135 @@
+#include <algorithm>
+#include <fstream>
 #include <iostream>
+#include <iterator>
+#include <stdexcept>
 #include <string>
 #include <vector>
 
 class Node {
 public:
-  Node(int val) : data(val), next(nullptr) {}
-  Node(std::string val) : data_str(val), next(nullptr) {}
-
-  int getData() const { return data; }
-  std::string getDataStr() const { return data_str; }
-
-  Node *getNext() const { return next; }
-  void setNext(Node *n) { next = n; }
-
-private:
-  int data;
-  std::string data_str;
-  Node *next;
+  Node *next = nullptr;
+  int value = 0;
 };
 
 class Queue {
 public:
-  Queue() : front(nullptr), rear(nullptr) {}
+  Node *front = nullptr;
+  Node *rear = nullptr;
 
-  bool isEmpty() const { return front == nullptr; }
-
-  void enqueue(int val) {
-    Node *newNode = new Node(val);
-    if (isEmpty()) {
-      front = rear = newNode;
-    } else {
-      rear->setNext(newNode);
-      rear = newNode;
-    }
-  }
-
-  void enqueue(std::string val) {
-    Node *newNode = new Node(val);
-    if (isEmpty()) {
-      front = rear = newNode;
-    } else {
-      rear->setNext(newNode);
-      rear = newNode;
-    }
-  }
-
-  bool hasQueue() const { return !isEmpty(); }
-
-  void dequeue() {
-    if (!isEmpty()) {
+  ~Queue() {
+    while (front) {
       Node *temp = front;
-      front = front->getNext();
+      front = front->next;
       delete temp;
     }
   }
 
-  void swap() {
-    if (front != nullptr && front->getNext() != nullptr) {
-      Node *first = front;
-      Node *second = front->getNext();
-      front = second;
-      first->setNext(second->getNext());
-      second->setNext(first);
-      if (first == rear) {
-        rear = second;
-      }
+  bool isEmpty() { return front == nullptr; }
+
+  void enqueue(int value) {
+    Node *newNode = new Node;
+    newNode->value = value;
+    newNode->next = nullptr;
+    if (rear) {
+      rear->next = newNode;
+    } else {
+      front = newNode;
+    }
+    rear = newNode;
+  }
+
+  int dequeue() {
+    if (isEmpty()) {
+      throw std::out_of_range("Index out of range");
+    }
+    Node *temp = front;
+    int value = temp->value;
+    front = front->next;
+    delete temp;
+    if (!front) {
+      rear = nullptr;
+    }
+    return value;
+  }
+
+  void swap(int index1, int index2) {
+    if (index1 == index2) {
+      return;
+    }
+    if (index1 > index2) {
+      std::swap(index1, index2);
+    }
+    Node *node1 = front;
+    Node *node2 = front;
+    for (int i = 0; i < index1 && node1; ++i) {
+      node1 = node1->next;
+    }
+    for (int i = 0; i < index2 && node2; ++i) {
+      node2 = node2->next;
+    }
+    if (node1 && node2) {
+      std::swap(node1->value, node2->value);
     }
   }
 
-private:
-  Node *front;
-  Node *rear;
+  int get(int index) {
+    Node *node = front;
+    for (int i = 0; i < index && node; ++i) {
+      node = node->next;
+    }
+    if (node) {
+      return node->value;
+    } else {
+      throw std::out_of_range("Index out of range");
+    }
+  }
 };
 
-int main() {
+Queue csvToQueue(const std::string &filename) {
   Queue queue;
+  std::ifstream file(filename);
+  std::string line;
+  std::vector<std::string> lines;
 
-  // Test case 1: Dequeue when queue is empty
-  std::cout << "hasQueue(): " << queue.hasQueue() << std::endl;
-  queue.dequeue();
+  while (std::getline(file, line)) {
+    queue.enqueue(std::stoi(line));
+  }
 
-  // Test case 2: Enqueue integers and strings
-  queue.enqueue(42);
-  queue.enqueue("Hello");
-  queue.enqueue(7);
+  return queue;
+}
 
-  // Test case 3: Dequeue integers and strings
-  queue.dequeue();
-  queue.dequeue();
-  queue.dequeue();
+void queueToCsv(const Queue &queue, const std::string &filename) {
+  std::ofstream file(filename);
+  Node *current = queue.front;
+  while (current) {
+    file << current->value << std::endl;
+    current = current->next;
+  }
+}
 
-  // Test case 4: Swap elements
-  queue.enqueue("OpenAI");
-  queue.enqueue("GPT-3.5");
-  queue.swap();
+int main(int argc, char *argv[]) {
+  if (argc < 2) {
+    std::cerr << "Usage: " << argv[0] << " <operation> <args>" << std::endl;
+    return 1;
+  }
 
+  Queue queue = csvToQueue("List.csv");
+  std::string operation = argv[1];
+
+  if (operation == "swap") {
+    queue.swap(std::stoi(argv[2]), std::stoi(argv[3]));
+  } else if (operation == "enqueue") {
+    queue.enqueue(std::stoi(argv[2]));
+  } else if (operation == "dequeue") {
+    queue.dequeue();
+  } else if (operation == "get") {
+    std::cout << queue.get(std::stoi(argv[2])) << std::endl;
+  } else {
+    std::cout << "Invalid operation" << std::endl;
+    return 1;
+  }
+
+  queueToCsv(queue, "List.csv");
   return 0;
 }
