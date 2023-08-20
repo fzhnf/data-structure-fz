@@ -1,45 +1,62 @@
-#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <iterator>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
 class Node {
 public:
-  Node *next = nullptr;
-  int value = 0;
+  Node *next;
+  std::string value;
+
+  Node() : next(nullptr) {}
 };
 
 class Stack {
-public:
-  Node *top = nullptr;
+private:
+  class StackIterator {
+  private:
+    Node *current;
 
-  ~Stack() {
-    while (top) {
-      Node *temp = top;
-      top = top->next;
-      delete temp;
+  public:
+    StackIterator(Node *start) : current(start) {}
+
+    bool operator!=(const StackIterator &other) const {
+      return current != other.current;
     }
+
+    StackIterator &operator++() {
+      current = current->next;
+      return *this;
+    }
+
+    std::string operator*() const { return current->value; }
+  };
+
+public:
+  Node *top;
+
+  Stack() : top(nullptr) {}
+
+  bool hasPop() const { return top != nullptr; }
+
+  void push(const std::string &value) {
+    Node *node = new Node();
+    node->value = value;
+    node->next = top;
+    top = node;
   }
 
-  void push(int value) {
-    Node *newNode = new Node;
-    newNode->value = value;
-    newNode->next = top;
-    top = newNode;
-  }
-
-  int pop() {
-    if (top) {
+  std::string pop() {
+    if (hasPop()) {
+      std::string value = top->value;
       Node *temp = top;
-      int value = temp->value;
       top = top->next;
       delete temp;
       return value;
     } else {
-      throw std::out_of_range("Index out of range");
+      std::cout << "Index out of range" << std::endl;
+      return "";
     }
   }
 
@@ -63,9 +80,7 @@ public:
     }
   }
 
-  bool hasPop() { return top != nullptr; }
-
-  int get(int index) {
+  std::string get(int index) {
     Node *node = top;
     for (int i = 0; i < index && node; ++i) {
       node = node->next;
@@ -73,61 +88,65 @@ public:
     if (node) {
       return node->value;
     } else {
-      throw std::out_of_range("Index out of range");
+      std::cout << "Index out of range" << std::endl;
+      return "";
     }
   }
+
+  StackIterator begin() const { return StackIterator(top); }
+
+  StackIterator end() const { return StackIterator(nullptr); }
 };
 
-Stack csvToStack(const std::string &filename) {
+Stack csv_to_stack(const std::string &filename) {
   Stack stack;
-  std::ifstream file(filename);
+  std::ifstream csvfile(filename);
   std::string line;
   std::vector<std::string> lines;
 
-  while (std::getline(file, line)) {
+  while (std::getline(csvfile, line)) {
     lines.push_back(line);
   }
 
   for (auto it = lines.rbegin(); it != lines.rend(); ++it) {
-    stack.push(std::stoi(*it));
+    stack.push(*it);
   }
 
   return stack;
 }
 
-void stackToCsv(const Stack &stack, const std::string &filename) {
-  std::ofstream file(filename);
-  Node *current = stack.top;
-  while (current) {
-    file << current->value << std::endl;
-    current = current->next;
+void stack_to_csv(const Stack &stack, const std::string &filename) {
+  std::ofstream csvfile(filename);
+  for (const std::string &value : stack) {
+    csvfile << value << std::endl;
   }
 }
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " <operation> <args>" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <operation> <args...>" << std::endl;
     return 1;
   }
 
-  Stack stack = csvToStack("List.csv");
+  Stack stack = csv_to_stack("List.csv");
+
   std::string operation = argv[1];
 
-  if (operation == "swap") {
+  if (operation == "swap" && argc == 4) {
     stack.swap(std::stoi(argv[2]), std::stoi(argv[3]));
   } else if (operation == "pop") {
     stack.pop();
-  } else if (operation == "push") {
-    stack.push(std::stoi(argv[2]));
+  } else if (operation == "push" && argc == 3) {
+    stack.push(argv[2]);
   } else if (operation == "hasPop") {
     stack.hasPop();
-  } else if (operation == "get") {
+  } else if (operation == "get" && argc == 3) {
     std::cout << stack.get(std::stoi(argv[2])) << std::endl;
   } else {
     std::cout << "Invalid operation" << std::endl;
-    return 1;
   }
 
-  stackToCsv(stack, "List.csv");
+  stack_to_csv(stack, "List.csv");
+
   return 0;
 }

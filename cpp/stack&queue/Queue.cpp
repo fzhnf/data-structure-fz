@@ -1,55 +1,50 @@
-#include <algorithm>
 #include <fstream>
 #include <iostream>
 #include <iterator>
-#include <stdexcept>
 #include <string>
 #include <vector>
 
 class Node {
 public:
-  Node *next = nullptr;
-  int value = 0;
+  Node *next;
+  std::string value;
+
+  Node() : next(nullptr) {}
 };
 
 class Queue {
 public:
-  Node *front = nullptr;
-  Node *rear = nullptr;
+  Node *front;
+  Node *rear;
 
-  ~Queue() {
-    while (front) {
-      Node *temp = front;
-      front = front->next;
-      delete temp;
-    }
-  }
+  Queue() : front(nullptr), rear(nullptr) {}
 
-  bool isEmpty() { return front == nullptr; }
+  bool isEmpty() const { return front == nullptr; }
 
-  void enqueue(int value) {
-    Node *newNode = new Node;
-    newNode->value = value;
-    newNode->next = nullptr;
-    if (rear) {
-      rear->next = newNode;
-    } else {
-      front = newNode;
-    }
-    rear = newNode;
-  }
-
-  int dequeue() {
+  void enqueue(const std::string &value) {
+    Node *node = new Node();
+    node->value = value;
+    node->next = nullptr;
     if (isEmpty()) {
-      throw std::out_of_range("Index out of range");
+      front = rear = node;
+    } else {
+      rear->next = node;
+      rear = node;
     }
-    Node *temp = front;
-    int value = temp->value;
+  }
+
+  std::string dequeue() {
+    if (isEmpty()) {
+      std::cout << "Index out of range" << std::endl;
+      return "";
+    }
+    Node *node = front;
     front = front->next;
-    delete temp;
-    if (!front) {
+    if (front == nullptr) {
       rear = nullptr;
     }
+    std::string value = node->value;
+    delete node;
     return value;
   }
 
@@ -73,7 +68,7 @@ public:
     }
   }
 
-  int get(int index) {
+  std::string get(int index) {
     Node *node = front;
     for (int i = 0; i < index && node; ++i) {
       node = node->next;
@@ -81,55 +76,57 @@ public:
     if (node) {
       return node->value;
     } else {
-      throw std::out_of_range("Index out of range");
+      std::cout << "Index out of range" << std::endl;
+      return "";
     }
   }
 };
 
-Queue csvToQueue(const std::string &filename) {
+Queue csv_to_queue(const std::string &filename) {
   Queue queue;
-  std::ifstream file(filename);
+  std::ifstream csvfile(filename);
   std::string line;
   std::vector<std::string> lines;
 
-  while (std::getline(file, line)) {
-    queue.enqueue(std::stoi(line));
+  while (std::getline(csvfile, line)) {
+    queue.enqueue(line);
   }
 
   return queue;
 }
 
-void queueToCsv(const Queue &queue, const std::string &filename) {
-  std::ofstream file(filename);
+void queue_to_csv(const Queue &queue, const std::string &filename) {
+  std::ofstream csvfile(filename);
   Node *current = queue.front;
   while (current) {
-    file << current->value << std::endl;
+    csvfile << current->value << std::endl;
     current = current->next;
   }
 }
 
 int main(int argc, char *argv[]) {
   if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " <operation> <args>" << std::endl;
+    std::cout << "Usage: " << argv[0] << " <operation> <args...>" << std::endl;
     return 1;
   }
 
-  Queue queue = csvToQueue("List.csv");
+  Queue queue = csv_to_queue("List.csv");
+
   std::string operation = argv[1];
 
-  if (operation == "swap") {
+  if (operation == "swap" && argc == 4) {
     queue.swap(std::stoi(argv[2]), std::stoi(argv[3]));
-  } else if (operation == "enqueue") {
-    queue.enqueue(std::stoi(argv[2]));
+  } else if (operation == "enqueue" && argc == 3) {
+    queue.enqueue(argv[2]);
   } else if (operation == "dequeue") {
     queue.dequeue();
-  } else if (operation == "get") {
+  } else if (operation == "get" && argc == 3) {
     std::cout << queue.get(std::stoi(argv[2])) << std::endl;
   } else {
     std::cout << "Invalid operation" << std::endl;
-    return 1;
   }
 
-  queueToCsv(queue, "List.csv");
+  queue_to_csv(queue, "List.csv");
+
   return 0;
 }
